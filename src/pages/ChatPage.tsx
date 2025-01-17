@@ -1,17 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { logMethodEntry, logMethodExit } from '@/lib/logger'
+import { logMethodEntry, logMethodExit, logError } from '@/lib/logger'
 import { useUser } from '@/lib/contexts/UserContext'
+import { useChat } from '@/lib/contexts/ChatContext'
+import { useMessages } from '@/lib/contexts/MessageContext'
 import { Navigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
-import { cn } from '@/lib/utils'
-
-interface Channel {
-  id: string
-  name: string
-  unread: number
-}
 
 interface DirectMessage {
   id: string
@@ -30,6 +25,8 @@ interface TextRange {
 export function ChatPage(): React.ReactElement {
   logMethodEntry('ChatPage')
   const { user, isAuthenticated, logout } = useUser()
+  const { activeChannel, channels } = useChat()
+  const { messages, sendMessage } = useMessages()
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false)
   const [messageText, setMessageText] = useState('')
   const [formats, setFormats] = useState<TextRange[]>([])
@@ -159,12 +156,6 @@ export function ChatPage(): React.ReactElement {
   }, [])
 
   // Mock data - will be replaced with real data
-  const channels: Channel[] = [
-    { id: '1', name: 'general', unread: 0 },
-    { id: '2', name: 'random', unread: 2 },
-    { id: '3', name: 'help', unread: 1 }
-  ]
-
   const directMessages: DirectMessage[] = [
     { id: '1', name: 'User One', status: 'online', unread: 0 },
     { id: '2', name: 'User Two', status: 'away', unread: 1 },
@@ -183,17 +174,24 @@ export function ChatPage(): React.ReactElement {
     logMethodExit('ChatPage.handleLogout')
   }
 
-  const handleSubmit = (): void => {
+  const handleSubmit = async (): Promise<void> => {
+    logMethodEntry('ChatPage.handleSubmit')
     if (!messageText.trim()) return
-    // TODO: Send message
-    setMessageText('')
-    setFormats([])
+
+    try {
+      await sendMessage(messageText)
+      setMessageText('')
+      setFormats([])
+      logMethodExit('ChatPage.handleSubmit', { success: true })
+    } catch (error) {
+      logError(error as Error, 'ChatPage.handleSubmit')
+    }
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
+  const handleKeyDown = async (e: React.KeyboardEvent<HTMLTextAreaElement>): Promise<void> => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      handleSubmit()
+      await handleSubmit()
     }
   }
 
@@ -236,9 +234,9 @@ export function ChatPage(): React.ReactElement {
   }
 
   const result = (
-    <div className="h-screen flex">
+    <div className="flex h-screen">
       {/* Left Sidebar */}
-      <div className="w-64 bg-gray-100 flex flex-col">
+      <div className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col">
         {/* Workspace Header */}
         <div className="p-4 flex items-center justify-between">
           <h1 className="text-lg font-semibold text-gray-900">ChatGenius</h1>
@@ -276,9 +274,9 @@ export function ChatPage(): React.ReactElement {
                   <span className="text-gray-500 mr-2">#</span>
                   {channel.name}
                 </span>
-                {channel.unread > 0 && (
+                {channel.unreadCount > 0 && (
                   <span className="bg-blue-600 text-white text-xs px-2 rounded-full">
-                    {channel.unread}
+                    {channel.unreadCount}
                   </span>
                 )}
               </Button>
@@ -332,7 +330,7 @@ export function ChatPage(): React.ReactElement {
         <div className="h-14 border-b border-gray-200 px-4 flex items-center justify-between">
           <div className="flex items-center">
             <span className="text-gray-500 mr-2">#</span>
-            <h2 className="font-semibold text-gray-900">general</h2>
+            <h2 className="font-semibold text-gray-900">{activeChannel?.name ?? 'Select a channel'}</h2>
           </div>
           <div className="flex items-center space-x-2">
             <Button variant="secondary" size="sm">
@@ -350,19 +348,22 @@ export function ChatPage(): React.ReactElement {
 
         {/* Messages Area */}
         <div className="flex-1 overflow-y-auto p-4">
-          {/* Message placeholder */}
-          <div className="flex items-start mb-4">
-            <Avatar className="h-8 w-8 mr-2">
-              <AvatarFallback>U</AvatarFallback>
-            </Avatar>
-            <div>
-              <div className="flex items-baseline">
-                <span className="font-semibold mr-2 text-gray-900">User One</span>
-                <span className="text-xs text-gray-500">12:34 PM</span>
+          {messages.map((message) => (
+            <div key={message.id} className="flex items-start mb-4">
+              <Avatar className="h-8 w-8 mr-2">
+                <AvatarFallback>{message.userId.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <div>
+                <div className="flex items-baseline">
+                  <span className="font-semibold mr-2 text-gray-900">{message.userId}</span>
+                  <span className="text-xs text-gray-500">
+                    {message.createdAt.toLocaleTimeString()}
+                  </span>
+                </div>
+                <p className="text-gray-700">{message.content}</p>
               </div>
-              <p className="text-gray-700">This is a sample message in the chat.</p>
             </div>
-          </div>
+          ))}
         </div>
 
         {/* Message Input */}
@@ -400,57 +401,29 @@ export function ChatPage(): React.ReactElement {
                 </Button>
               </div>
             )}
-            <div className="flex items-start space-x-2">
-              <div className="flex-1">
-                {renderInput()}
-              </div>
-              <div className="flex items-center space-x-2">
-                <Button variant="secondary" size="sm">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /></svg>
-                </Button>
-                <Button variant="secondary" size="sm">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>
-                </Button>
-                <Button variant="secondary" size="sm">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M8 14s1.5 2 4 2 4-2 4-2" /><line x1="9" x2="9.01" y1="9" y2="9" /><line x1="15" x2="15.01" y1="9" y2="9" /></svg>
-                </Button>
-                <Separator orientation="vertical" className="h-6" />
-                <Button 
-                  variant="secondary" 
-                  size="sm"
-                  onClick={handleSubmit}
-                  disabled={!messageText.trim()}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                </Button>
-              </div>
-            </div>
+            {renderInput()}
           </div>
         </div>
       </div>
 
       {/* Right Sidebar */}
-      <div 
-        className={cn(
-          "fixed right-0 top-0 h-screen bg-gray-100 border-l border-gray-200 transform transition-transform duration-200 ease-in-out",
-          rightSidebarOpen ? "translate-x-0" : "translate-x-full",
-          "w-64"
-        )}
-      >
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-900">Thread</h2>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => setRightSidebarOpen(false)}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-            </Button>
+      {rightSidebarOpen && (
+        <div className="w-64 bg-gray-50 border-l border-gray-200">
+          <div className="p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold text-gray-900">Thread</h2>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setRightSidebarOpen(false)}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              </Button>
+            </div>
+            <p className="text-gray-500 text-sm">No thread selected</p>
           </div>
-          <p className="text-gray-500 text-sm">No thread selected</p>
         </div>
-      </div>
+      )}
     </div>
   )
 

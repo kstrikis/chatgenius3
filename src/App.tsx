@@ -4,6 +4,8 @@ import { LandingPage } from '@/pages/LandingPage'
 import { ChatPage } from '@/pages/ChatPage'
 import { Toaster } from '@/components/ui/toaster'
 import { UserProvider } from '@/lib/contexts/UserContext'
+import { ChatProvider } from '@/lib/contexts/ChatContext'
+import { MessageProvider } from '@/lib/contexts/MessageContext'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import '@/styles/users.css'
 
@@ -20,13 +22,17 @@ function App(): React.ReactElement {
   const result = (
     <BrowserRouter>
       <UserProvider>
-        <div className="app" style={{ minHeight: '100vh', background: '#f0f2f5' }}>
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/chat" element={<ChatPage />} />
-          </Routes>
-          <Toaster />
-        </div>
+        <ChatProvider>
+          <MessageProvider>
+            <div className="app" style={{ minHeight: '100vh', background: '#f0f2f5' }}>
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/chat" element={<ChatPage />} />
+              </Routes>
+              <Toaster />
+            </div>
+          </MessageProvider>
+        </ChatProvider>
       </UserProvider>
     </BrowserRouter>
   )
