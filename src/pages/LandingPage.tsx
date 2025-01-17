@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { logMethodEntry, logMethodExit, logInfo, logError } from '@/lib/logger'
+import { logMethodEntry, logMethodExit, logError } from '@/lib/logger'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'

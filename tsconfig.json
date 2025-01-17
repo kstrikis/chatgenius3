@@ -5,6 +5,7 @@
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
+    "types": ["node"],
 
     /* Bundler mode */
     "moduleResolution": "bundler",
@@ -39,11 +40,9 @@
   ],
   "exclude": [
     "node_modules",
+    "vite.config.ts",
     "cypress",
-    "**/*.cy.ts",
-    "**/*.cy.tsx",
-    "cypress.config.ts",
-    "vite.config.ts"
+    "cypress.config.ts"
   ],
   "references": [
     { "path": "./tsconfig.node.json" }

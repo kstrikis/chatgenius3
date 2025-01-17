@@ -1,12 +1,13 @@
-import { mount } from 'cypress/react'
-import '@testing-library/cypress/add-commands'
+/// <reference types="cypress" />
+import { mount } from 'cypress/react18'
+import './commands'
 
-// Augment the Cypress namespace to include type definitions for
-// your custom command.
 declare global {
   namespace Cypress {
     interface Chainable {
       mount: typeof mount
+      stub(): Chainable<any>
+      get(alias: string): Chainable<any>
     }
   }
 }
