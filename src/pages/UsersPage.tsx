@@ -1,14 +1,19 @@
-import { useEffect } from 'react'
-
+import React, { useEffect } from 'react'
+import { logMethodEntry, logMethodExit, logInfo } from '../lib/logger'
 import { UserForm } from '../components/UserForm'
 import { UserList } from '../components/UserList'
 
-export function UsersPage() {
-  useEffect(() => {
-    console.log('UsersPage mounted')
+export function UsersPage(): React.ReactElement {
+  logMethodEntry('UsersPage')
+  useEffect((): (() => void) => {
+    logMethodEntry('UsersPage.useEffect')
+    logInfo('UsersPage mounted')
+    return () => {
+      logMethodExit('UsersPage.useEffect')
+    }
   }, [])
 
-  return (
+  const result = (
     <div className="users-page" style={{ border: '2px solid red', padding: '20px', margin: '20px' }}>
       <h1>User Management</h1>
       <div className="users-container">
@@ -21,4 +26,7 @@ export function UsersPage() {
       </div>
     </div>
   )
+
+  logMethodExit('UsersPage')
+  return result
 } 

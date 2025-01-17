@@ -1,18 +1,18 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-
-import App from "./App.tsx";
+import { logInfo, logError } from "./lib/logger";
+import App from "./App";
 import "./index.css";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
-console.log('Starting application...')
+logInfo('Starting application...')
 
 const rootElement = document.getElementById("root")
 if (!rootElement) {
   throw new Error('Failed to find root element')
 }
 
-console.log('Root element found, mounting app...')
+logInfo('Root element found, mounting app...')
 
 try {
   ReactDOM.createRoot(rootElement).render(
@@ -22,7 +22,7 @@ try {
       </ErrorBoundary>
     </React.StrictMode>
   );
-  console.log('App mounted successfully')
+  logInfo('App mounted successfully')
 } catch (error) {
-  console.error('Failed to mount app:', error)
+  logError(error instanceof Error ? error : new Error('Failed to mount app'), 'main')
 }

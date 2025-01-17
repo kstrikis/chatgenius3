@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import type { RealtimeChannel } from '@supabase/supabase-js'
-
+import { logMethodEntry, logMethodExit, logError, logInfo } from './logger'
 import type { User } from '../types/database'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
@@ -10,7 +10,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')
 }
 
-console.log('Initializing Supabase client with URL:', supabaseUrl)
+logInfo('Initializing Supabase client', { url: supabaseUrl })
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
@@ -25,7 +25,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 export type RealtimeEventType = 'INSERT' | 'UPDATE' | 'DELETE'
 
-export interface RealtimeChangePayload {
+export type RealtimeChangePayload = {
   eventType: RealtimeEventType
   new: User
   old: User
@@ -36,7 +36,8 @@ export interface RealtimeChangePayload {
 export function subscribeToUsers(
   callback: (payload: RealtimeChangePayload) => void
 ): RealtimeChannel {
-  console.log('Setting up users subscription for component')
+  logMethodEntry('subscribeToUsers')
+  logInfo('Setting up users subscription')
 
   const channel = supabase.channel('db-changes')
 
@@ -49,7 +50,8 @@ export function subscribeToUsers(
         table: 'users'
       },
       (payload) => {
-        console.log('Raw payload received:', payload)
+        logMethodEntry('subscribeToUsers.onPayload')
+        logInfo('Raw payload received', { payload })
         try {
           const typedPayload: RealtimeChangePayload = {
             eventType: payload.eventType as RealtimeEventType,
@@ -58,25 +60,30 @@ export function subscribeToUsers(
             table: payload.table,
             schema: payload.schema
           }
-          console.log('Processed payload:', typedPayload)
+          logInfo('Processed payload', { typedPayload })
           callback(typedPayload)
         } catch (error) {
-          console.error('Error processing payload:', error)
+          logError(error instanceof Error ? error : new Error('Error processing payload'), 'subscribeToUsers.onPayload')
         }
+        logMethodExit('subscribeToUsers.onPayload')
       }
     )
     .subscribe((status) => {
-      console.log(`Realtime subscription status: ${status}`)
+      logMethodEntry('subscribeToUsers.onSubscribe')
+      logInfo('Realtime subscription status updated', { status })
       if (status === 'SUBSCRIBED') {
-        console.log('Successfully subscribed to real-time changes')
+        logInfo('Successfully subscribed to real-time changes')
       }
+      logMethodExit('subscribeToUsers.onSubscribe')
     })
 
+  logMethodExit('subscribeToUsers')
   return channel
 }
 
 // Helper to unsubscribe from real-time updates
-export function unsubscribe(channel: RealtimeChannel) {
-  console.log('Unsubscribing from channel:', channel.topic)
-  supabase.removeChannel(channel)
+export function unsubscribe(channel: RealtimeChannel): void {
+  logMethodEntry('unsubscribe', { topic: channel.topic })
+  void supabase.removeChannel(channel)
+  logMethodExit('unsubscribe')
 } 

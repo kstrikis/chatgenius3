@@ -1,74 +1,84 @@
-import type { NewUser, User } from '../types/database'
-
 import { supabase } from './supabase'
-
-export async function createUser(user: NewUser): Promise<User | null> {
-  const { data, error } = await supabase
-    .from('users')
-    .insert([user])
-    .select()
-    .single()
-
-  if (error) {
-    console.error('Error creating user:', error)
-    return null
-  }
-
-  return data
-}
+import type { User } from '../types/database'
+import { logMethodEntry, logMethodExit, logInfo, logError } from './logger'
 
 export async function getAllUsers(): Promise<User[]> {
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .order('created_at', { ascending: false })
+  logMethodEntry('getAllUsers')
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .order('created_at', { ascending: false })
 
-  if (error) {
-    console.error('Error fetching users:', error)
-    return []
+    if (error) {
+      logError(error, 'getAllUsers')
+      throw error
+    }
+
+    logInfo('Successfully fetched users', { count: data?.length })
+    logMethodExit('getAllUsers', { count: data?.length })
+    return data || []
+  } catch (error) {
+    logError(error instanceof Error ? error : new Error('Failed to fetch users'), 'getAllUsers')
+    throw error
   }
-
-  return data
 }
 
-export async function getUserById(id: number): Promise<User | null> {
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', id)
-    .single()
+export async function createUser(user: Omit<User, 'id' | 'created_at'>): Promise<User | null> {
+  logMethodEntry('createUser', { user })
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .insert([user])
+      .select()
+      .single()
 
-  if (error) {
-    console.error('Error fetching user:', error)
-    return null
+    if (error) {
+      logError(error, 'createUser')
+      throw error
+    }
+
+    logInfo('Successfully created user', { user: data })
+    logMethodExit('createUser', { user: data })
+    return data
+  } catch (error) {
+    logError(error instanceof Error ? error : new Error('Failed to create user'), 'createUser')
+    throw error
   }
-
-  return data
 }
 
-// Test function to demonstrate usage
-export async function testUserOperations() {
-  console.log('Testing Supabase User Operations...')
+export async function testUserOperations(): Promise<void> {
+  logMethodEntry('testUserOperations')
+  try {
+    // Test creating a user
+    const newUser = await createUser({
+      name: 'Test User',
+      email: 'test@example.com'
+    })
+    logInfo('Created test user', { user: newUser })
 
-  // Create a new user
-  const newUser: NewUser = {
-    name: 'Test User',
-    email: 'test@example.com'
+    // Test fetching users
+    const users = await getAllUsers()
+    logInfo('Fetched all users', { count: users.length })
+
+    // Test deleting the test user if it was created
+    if (newUser) {
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', newUser.id)
+
+      if (error) {
+        logError(error, 'testUserOperations.deleteUser')
+      } else {
+        logInfo('Deleted test user', { userId: newUser.id })
+      }
+    }
+
+    logMethodExit('testUserOperations', { success: true })
+  } catch (error) {
+    logError(error instanceof Error ? error : new Error('Test operations failed'), 'testUserOperations')
+    logMethodExit('testUserOperations', { success: false, error })
+    throw error
   }
-
-  console.log('Creating new user...')
-  const createdUser = await createUser(newUser)
-  console.log('Created user:', createdUser)
-
-  if (createdUser) {
-    // Fetch the user by ID
-    console.log('Fetching user by ID...')
-    const fetchedUser = await getUserById(createdUser.id)
-    console.log('Fetched user:', fetchedUser)
-  }
-
-  // Fetch all users
-  console.log('Fetching all users...')
-  const allUsers = await getAllUsers()
-  console.log('All users:', allUsers)
 } 
