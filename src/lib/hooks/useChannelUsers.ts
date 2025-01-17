@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useChat } from '@/lib/contexts/ChatContext'
 import { useMessages } from '@/lib/contexts/MessageContext'
-import { logMethodEntry, logMethodExit, logError } from '@/lib/logger'
+import { logMethodEntry, logMethodExit } from '@/lib/logger'
 
 interface ChannelUser {
   id: string

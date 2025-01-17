@@ -299,7 +299,7 @@ export function ChatPage(): JSX.Element {
       document.addEventListener('mouseup', handleMouseUp)
     }
 
-    return () => {
+    return (): void => {
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('mouseup', handleMouseUp)
       // Reset styles when unmounting
