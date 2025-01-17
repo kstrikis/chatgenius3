@@ -53,6 +53,12 @@ export function LandingPage(): React.ReactElement {
     setFormData({ ...formData, name: e.target.value })
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
+    if (e.key === 'Enter') {
+      void handleGuestSubmit(formData)
+    }
+  }
+
   const result = (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
@@ -72,6 +78,7 @@ export function LandingPage(): React.ReactElement {
               name="name"
               value={formData.name}
               onChange={handleNameChange}
+              onKeyDown={handleKeyDown}
               placeholder="Enter a guest name (optional)"
               className="w-full"
             />
