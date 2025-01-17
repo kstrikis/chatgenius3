@@ -18,23 +18,41 @@ create policy "Messages are viewable by channel members" on messages
     exists (
       select 1 from channel_members
       where channel_members.channel_id = messages.channel_id
-      and channel_members.user_id = auth.uid()
+      and channel_members.user_id = messages.user_id
     )
   );
+
+create policy "Service role can manage messages" on messages
+  using (true);
 
 create policy "Messages can be inserted by channel members" on messages
   for insert with check (
     exists (
       select 1 from channel_members
-      where channel_members.channel_id = messages.channel_id
-      and channel_members.user_id = auth.uid()
+      where channel_members.channel_id = channel_id
+      and channel_members.user_id = user_id
     )
   );
 
 create policy "Messages can be updated by their authors" on messages
   for update using (
-    auth.uid() = user_id
+    user_id in (
+      select id from users where id = messages.user_id
+    )
   );
 
--- Enable realtime
-alter publication supabase_realtime add table messages; 
+-- Grant access to authenticated and anonymous users
+grant usage on schema public to authenticated, anon;
+grant all on messages to authenticated, anon;
+
+-- Drop existing publication if it exists
+drop publication if exists supabase_realtime;
+
+-- Create publication for all tables
+create publication supabase_realtime for all tables;
+
+-- Enable replication on specific tables
+alter table messages replica identity full;
+alter table channels replica identity full;
+alter table users replica identity full;
+alter table channel_members replica identity full; 

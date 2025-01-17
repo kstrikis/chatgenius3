@@ -29,23 +29,7 @@ interface UserProviderProps {
 
 export function UserProvider({ children }: UserProviderProps): React.ReactElement {
   logMethodEntry('UserProvider')
-  const [user, setUser] = useState<User | null>(() => {
-    logMethodEntry('UserProvider.initializeState')
-    try {
-      const storedUser = localStorage.getItem(USER_STORAGE_KEY)
-      if (storedUser) {
-        const parsedUser = JSON.parse(storedUser) as User
-        logInfo('Restored user from storage', { user: parsedUser })
-        return parsedUser
-      }
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to parse stored user')
-      logError(error, 'UserProvider.initializeState')
-      localStorage.removeItem(USER_STORAGE_KEY)
-    }
-    logMethodExit('UserProvider.initializeState', { result: 'no stored user' })
-    return null
-  })
+  const [user, setUser] = useState<User | null>(null)
 
   // Keep track of the last persisted user state
   const lastPersistedRef = useRef<string | null>(null)

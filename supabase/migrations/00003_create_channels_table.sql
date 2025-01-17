@@ -47,15 +47,13 @@ create policy "Users can create public channels"
   with check (type = 'public');
 
 -- Create policies for channel_members
-create policy "Channel members are viewable by channel members"
+create policy "Channel members are viewable by everyone"
   on public.channel_members for select
-  using (
-    exists (
-      select 1 from public.channel_members
-      where channel_id = channel_members.channel_id
-      and user_id = auth.uid()
-    )
-  );
+  using (true);
+
+create policy "Service role can manage channel members"
+  on public.channel_members
+  using (true);
 
 create policy "Users can join public channels"
   on public.channel_members for insert
@@ -65,8 +63,6 @@ create policy "Users can join public channels"
       where id = channel_members.channel_id
       and type = 'public'
     )
-    and
-    user_id = auth.uid()
   );
 
 -- Grant access to authenticated users

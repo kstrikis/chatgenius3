@@ -9,20 +9,11 @@ export interface Message {
   id: string
   channelId: string
   userId: string
+  userName: string
   content: string
   createdAt: Date
   updatedAt: Date
-  deletedAt?: Date
-}
-
-interface DbMessage {
-  id: string
-  channel_id: string
-  user_id: string
-  content: string
-  created_at: string
-  updated_at: string
-  deleted_at: string | null
+  deletedAt: Date | null
 }
 
 interface MessageContextType {
@@ -55,28 +46,42 @@ export function MessageProvider({ children }: MessageProviderProps): React.React
 
     const loadMessages = async (): Promise<void> => {
       try {
-        const { data: messagesData, error: messagesError } = await supabase
+        const { data: messages, error } = await supabase
           .from('messages')
-          .select('*')
+          .select(`
+            id,
+            channel_id,
+            user_id,
+            content,
+            created_at,
+            updated_at,
+            deleted_at,
+            users:user_id (
+              name
+            )
+          `)
           .eq('channel_id', activeChannel.id)
           .order('created_at', { ascending: true })
 
-        if (messagesError) throw messagesError
+        if (error) {
+          throw error
+        }
 
-        const formattedMessages: Message[] = (messagesData as DbMessage[]).map(message => ({
-          id: message.id,
-          channelId: message.channel_id,
-          userId: message.user_id,
-          content: message.content,
-          createdAt: new Date(message.created_at),
-          updatedAt: new Date(message.updated_at),
-          deletedAt: message.deleted_at ? new Date(message.deleted_at) : undefined
+        const formattedMessages = messages.map(msg => ({
+          id: msg.id,
+          channelId: msg.channel_id,
+          userId: msg.user_id,
+          userName: msg.users.name,
+          content: msg.content,
+          createdAt: new Date(msg.created_at),
+          updatedAt: new Date(msg.updated_at),
+          deletedAt: msg.deleted_at ? new Date(msg.deleted_at) : null
         }))
 
         setMessages(formattedMessages)
-        logInfo('Messages loaded successfully', { count: formattedMessages.length })
+        logInfo('Messages loaded successfully', { count: messages.length })
       } catch (error) {
-        logError(error as Error, 'MessageProvider.loadMessagesEffect')
+        logError(error as Error, 'MessageProvider.loadMessages')
       }
     }
 
@@ -120,7 +125,18 @@ export function MessageProvider({ children }: MessageProviderProps): React.React
       const { data: dbMessage, error } = await supabase
         .from('messages')
         .insert([messageData])
-        .select()
+        .select(`
+          id,
+          channel_id,
+          user_id,
+          content,
+          created_at,
+          updated_at,
+          deleted_at,
+          users:user_id (
+            name
+          )
+        `)
         .single()
 
       if (error) {
@@ -138,10 +154,11 @@ export function MessageProvider({ children }: MessageProviderProps): React.React
         id: dbMessage.id,
         channelId: dbMessage.channel_id,
         userId: dbMessage.user_id,
+        userName: dbMessage.users.name,
         content: dbMessage.content,
         createdAt: new Date(dbMessage.created_at),
         updatedAt: new Date(dbMessage.updated_at),
-        deletedAt: dbMessage.deleted_at ? new Date(dbMessage.deleted_at) : undefined
+        deletedAt: dbMessage.deleted_at ? new Date(dbMessage.deleted_at) : null
       }
 
       setMessages(prev => [...prev, newMessage])

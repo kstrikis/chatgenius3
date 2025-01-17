@@ -156,6 +156,8 @@ export function ChatProvider({ children }: ChatProviderProps): React.ReactElemen
         updatedAt: new Date(dbChannel.updated_at)
       }
 
+      // Set the new channel as active
+      setActiveChannel(newChannel)
       logInfo('Channel created successfully', { channel: newChannel })
       return newChannel
     } catch (error) {

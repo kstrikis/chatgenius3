@@ -25,7 +25,7 @@ interface TextRange {
 export function ChatPage(): React.ReactElement {
   logMethodEntry('ChatPage')
   const { user, isAuthenticated, logout } = useUser()
-  const { activeChannel, channels } = useChat()
+  const { activeChannel, channels, createChannel, setActiveChannel } = useChat()
   const { messages, sendMessage } = useMessages()
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false)
   const [messageText, setMessageText] = useState('')
@@ -233,6 +233,30 @@ export function ChatPage(): React.ReactElement {
     )
   }
 
+  // Create a default channel if none exists
+  useEffect(() => {
+    logMethodEntry('ChatPage.createDefaultChannelEffect')
+    if (isAuthenticated && channels.length === 0) {
+      void createChannel('general', 'The default channel for general discussion')
+        .then(channel => {
+          setActiveChannel(channel)
+        })
+        .catch(error => {
+          logError(error as Error, 'ChatPage.createDefaultChannelEffect')
+        })
+    }
+    logMethodExit('ChatPage.createDefaultChannelEffect')
+  }, [isAuthenticated, channels.length, createChannel, setActiveChannel])
+
+  // Select first channel if none is active
+  useEffect(() => {
+    logMethodEntry('ChatPage.selectFirstChannelEffect')
+    if (!activeChannel && channels.length > 0) {
+      setActiveChannel(channels[0])
+    }
+    logMethodExit('ChatPage.selectFirstChannelEffect')
+  }, [activeChannel, channels, setActiveChannel])
+
   const result = (
     <div className="flex h-screen">
       {/* Left Sidebar */}
@@ -351,11 +375,11 @@ export function ChatPage(): React.ReactElement {
           {messages.map((message) => (
             <div key={message.id} className="flex items-start mb-4">
               <Avatar className="h-8 w-8 mr-2">
-                <AvatarFallback>{message.userId.charAt(0)}</AvatarFallback>
+                <AvatarFallback>{message.userName.charAt(0)}</AvatarFallback>
               </Avatar>
               <div>
                 <div className="flex items-baseline">
-                  <span className="font-semibold mr-2 text-gray-900">{message.userId}</span>
+                  <span className="font-semibold mr-2 text-gray-900">{message.userName}</span>
                   <span className="text-xs text-gray-500">
                     {message.createdAt.toLocaleTimeString()}
                   </span>
