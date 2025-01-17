@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
-import { logError, logInfo } from '@/lib/logger'
+import { logError, logInfo, logMethodEntry, logMethodExit } from '@/lib/logger'
+import { toDbFields, fromDbFields } from '@/lib/utils/db'
+import { v4 as uuidv4 } from 'uuid'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -35,65 +37,61 @@ export interface DbUser {
   lastSeen: string
 }
 
-// Interface for database operations (snake_case)
-interface DbUserRow {
-  id: string
-  name: string
-  is_guest: boolean
-  status: 'online' | 'away' | 'offline'
-  created_at: string
-  last_seen: string
-}
-
 // Convert database row to application interface
-function mapDbRowToUser(row: DbUserRow): DbUser {
-  return {
-    id: row.id,
-    name: row.name,
-    isGuest: row.is_guest,
-    status: row.status,
-    createdAt: row.created_at,
-    lastSeen: row.last_seen
-  }
+function mapDbRowToUser(row: Record<string, unknown>): DbUser {
+  return fromDbFields<DbUser>(row)
 }
 
 export async function findOrCreateUser(name: string): Promise<DbUser> {
+  logMethodEntry('findOrCreateUser', { name })
   try {
-    // First try to find an existing guest user with this name
     const { data: existingUser, error: findError } = await supabase
       .from('users')
-      .select()
+      .select('*')
       .eq('name', name)
-      .eq('is_guest', true)
       .single()
 
-    if (findError && findError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+    if (findError && findError.code !== 'PGRST116') {
       throw findError
     }
 
     if (existingUser) {
-      return mapDbRowToUser(existingUser as DbUserRow)
+      logMethodExit('findOrCreateUser', { existingUser })
+      return mapDbRowToUser(existingUser)
     }
 
-    // If no existing user, create a new one
-    const { data: newUser, error: insertError } = await supabase
+    const newUserData = {
+      name,
+      isGuest: true,
+      status: 'online' as const
+    }
+
+    const { data: newUser, error: createError } = await supabase
       .from('users')
-      .insert([
-        {
-          name,
-          is_guest: true,
-          status: 'online',
-          last_seen: new Date().toISOString()
-        }
-      ])
+      .insert([toDbFields(newUserData)])
       .select()
       .single()
 
-    if (insertError) {
-      throw insertError
+    if (createError) {
+      throw createError
     }
 
-    return mapDbRowToUser(newUser as DbUserRow)
+    // Join the general channel
+    const channelMemberData = {
+      channelId: 'c0d46316-9e1d-4e8b-a7e7-b0a46c17c58c',
+      userId: newUser.id
+    }
+
+    const { error: joinError } = await supabase
+      .from('channel_members')
+      .insert([toDbFields(channelMemberData)])
+
+    if (joinError) {
+      throw joinError
+    }
+
+    logMethodExit('findOrCreateUser', { newUser })
+    return mapDbRowToUser(newUser)
   } catch (error) {
     logError(error as Error, 'findOrCreateUser')
     throw error
@@ -105,12 +103,14 @@ export async function updateUserStatus(
   status: 'online' | 'away' | 'offline'
 ): Promise<void> {
   try {
+    const updateData = {
+      status,
+      lastSeen: new Date().toISOString()
+    }
+
     const { error } = await supabase
       .from('users')
-      .update({
-        status,
-        last_seen: new Date().toISOString()
-      })
+      .update(toDbFields(updateData))
       .eq('id', userId)
 
     if (error) {
@@ -144,4 +144,24 @@ export function subscribeToUsers(callback: (payload: RealtimeChangePayload) => v
 
 export const unsubscribe = (subscription: { unsubscribe: () => void }): void => {
   void subscription.unsubscribe()
+}
+
+export async function createChannel(name: string, description: string): Promise<Channel> {
+  logMethodEntry('createChannel', { name, description })
+
+  const channelId = name === 'general' ? 'c0d46316-9e1d-4e8b-a7e7-b0a46c17c58c' : uuidv4()
+
+  const { data, error } = await supabase
+    .from('channels')
+    .insert([{ id: channelId, name, description }])
+    .select()
+    .single()
+
+  if (error) {
+    logError(error, 'createChannel')
+    throw error
+  }
+
+  logMethodExit('createChannel', { channel: data })
+  return mapDbRowToChannel(data)
 } 

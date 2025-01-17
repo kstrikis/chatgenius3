@@ -1,36 +1,41 @@
-import React, { useEffect } from 'react'
-import { logMethodEntry, logMethodExit, logInfo } from '@/lib/logger'
+import React from 'react'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { UserProvider } from '@/lib/contexts/UserContext'
+import { ChatProvider } from '@/lib/contexts/ChatContext'
+import { MessageProvider } from '@/lib/contexts/MessageContext'
 import { LandingPage } from '@/pages/LandingPage'
 import { ChatPage } from '@/pages/ChatPage'
+import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { Toaster } from '@/components/ui/toaster'
-import { UserProvider } from '@/lib/contexts/UserContext'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { logMethodEntry, logMethodExit } from '@/lib/logger'
 import '@/styles/users.css'
 
 function App(): React.ReactElement {
   logMethodEntry('App')
-  useEffect((): (() => void) => {
-    logMethodEntry('App.useEffect')
-    logInfo('App component mounted')
-    return () => {
-      logMethodExit('App.useEffect')
-    }
-  }, [])
-
   const result = (
-    <BrowserRouter>
+    <Router>
       <UserProvider>
-        <div className="app" style={{ minHeight: '100vh', background: '#f0f2f5' }}>
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/chat" element={<ChatPage />} />
-          </Routes>
-          <Toaster />
-        </div>
+        <ChatProvider>
+          <MessageProvider>
+            <div className="app" style={{ minHeight: '100vh', background: '#f0f2f5' }}>
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route 
+                  path="/chat" 
+                  element={
+                    <ProtectedRoute>
+                      <ChatPage />
+                    </ProtectedRoute>
+                  } 
+                />
+              </Routes>
+              <Toaster />
+            </div>
+          </MessageProvider>
+        </ChatProvider>
       </UserProvider>
-    </BrowserRouter>
+    </Router>
   )
-
   logMethodExit('App')
   return result
 }
