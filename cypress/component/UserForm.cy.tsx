@@ -1,5 +1,7 @@
 import React from 'react'
+
 import { mount } from 'cypress/react'
+
 import UserForm from '../../src/components/UserForm'
 
 describe('UserForm', () => {

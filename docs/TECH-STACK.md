@@ -33,10 +33,12 @@
 - **[Auth0](https://auth0.com/)**
   - A flexible authentication and authorization platform that provides secure login capabilities, including guest access and social logins, without the need for extensive backend setup.
 
-### **Logging**
+### **Logging & Monitoring**
 
-- **[Winston](https://github.com/winstonjs/winston)**
-  - A versatile logging library for Node.js that allows for customizable log levels, transports, and formats, ensuring efficient monitoring and debugging.
+- **Custom Browser Logger**
+  - A lightweight, browser-optimized logging system with color-coded output, structured logging, and environment-aware log levels.
+  - Features method entry/exit tracing, error tracking with stack traces, and JSON metadata support.
+  - Designed for both development debugging and production monitoring.
 
 ### **Testing**
 
@@ -46,7 +48,9 @@
 ### **Linting & Code Quality**
 
 - **[ESLint](https://eslint.org/)**
-  - A pluggable linting tool for identifying and fixing problematic patterns in JavaScript and TypeScript code, ensuring code quality and consistency.
+  - A pluggable linting tool for identifying and fixing problematic patterns in JavaScript and TypeScript code.
+  - Features a custom `enforce-logging` rule that enforces consistent logging practices across the codebase.
+  - Includes strict TypeScript checks and naming conventions.
 
 ### **Development & Deployment**
 
