@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { logMethodEntry, logMethodExit, logError } from '@/lib/logger'
 import { useUser } from '@/lib/contexts/UserContext'
 import { useChat } from '@/lib/contexts/ChatContext'
@@ -28,8 +28,18 @@ export function ChatPage(): JSX.Element {
   const [isInputFocused, setIsInputFocused] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const formatBarRef = useRef<HTMLDivElement>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
   const [sidebarWidth, setSidebarWidth] = useState(384) // 384px = 24rem = 1.5 * w-64
   const [isResizing, setIsResizing] = useState(false)
+
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [])
+
+  // Auto-scroll when messages change or channel changes
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages, activeChannel, scrollToBottom])
 
   const handleFormat = (format: 'bold' | 'italic' | 'strike' | 'link'): void => {
     const textarea = textareaRef.current
@@ -428,6 +438,7 @@ export function ChatPage(): JSX.Element {
               </div>
             </div>
           ))}
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Message Input */}
