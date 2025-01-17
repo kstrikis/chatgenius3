@@ -56,7 +56,7 @@ export function MessageProvider({ children }: MessageProviderProps): React.React
             created_at,
             updated_at,
             deleted_at,
-            users:user_id (
+            users (
               name
             )
           `)
@@ -71,7 +71,7 @@ export function MessageProvider({ children }: MessageProviderProps): React.React
           id: msg.id,
           channelId: msg.channel_id,
           userId: msg.user_id,
-          userName: msg.users.name,
+          userName: (msg.users as unknown as { name: string })?.name ?? 'Unknown User',
           content: msg.content,
           createdAt: new Date(msg.created_at),
           updatedAt: new Date(msg.updated_at),
@@ -133,7 +133,7 @@ export function MessageProvider({ children }: MessageProviderProps): React.React
           created_at,
           updated_at,
           deleted_at,
-          users:user_id (
+          users (
             name
           )
         `)
@@ -154,7 +154,7 @@ export function MessageProvider({ children }: MessageProviderProps): React.React
         id: dbMessage.id,
         channelId: dbMessage.channel_id,
         userId: dbMessage.user_id,
-        userName: dbMessage.users.name,
+        userName: (dbMessage.users as unknown as { name: string })?.name ?? 'Unknown User',
         content: dbMessage.content,
         createdAt: new Date(dbMessage.created_at),
         updatedAt: new Date(dbMessage.updated_at),

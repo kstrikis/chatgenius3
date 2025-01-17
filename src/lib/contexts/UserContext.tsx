@@ -93,8 +93,7 @@ export function UserProvider({ children }: UserProviderProps): React.ReactElemen
       // Clear any pending blur timeout
       clearTimeout(blurTimeoutId)
       
-      // Wait a bit before marking as online to avoid rapid status changes
-      focusTimeoutId = setTimeout(async () => {
+      const setOnline = async (): Promise<void> => {
         if (user?.id && user.status !== 'online') {
           try {
             await updateUserStatus(user.id, 'online')
@@ -103,6 +102,11 @@ export function UserProvider({ children }: UserProviderProps): React.ReactElemen
             logError(error as Error, 'UserProvider.handleFocus')
           }
         }
+      }
+      
+      // Wait a bit before marking as online to avoid rapid status changes
+      focusTimeoutId = setTimeout(() => {
+        void setOnline()
       }, 2000) // 2 second delay
     }
 
@@ -110,8 +114,7 @@ export function UserProvider({ children }: UserProviderProps): React.ReactElemen
       // Clear any pending focus timeout
       clearTimeout(focusTimeoutId)
       
-      // Wait a bit before marking as away to avoid rapid status changes
-      blurTimeoutId = setTimeout(async () => {
+      const setAway = async (): Promise<void> => {
         if (user?.id && user.status !== 'away') {
           try {
             await updateUserStatus(user.id, 'away')
@@ -120,21 +123,44 @@ export function UserProvider({ children }: UserProviderProps): React.ReactElemen
             logError(error as Error, 'UserProvider.handleBlur')
           }
         }
+      }
+      
+      // Wait a bit before marking as away to avoid rapid status changes
+      blurTimeoutId = setTimeout(() => {
+        void setAway()
       }, 5000) // 5 second delay
     }
 
-    window.addEventListener('focus', handleFocus)
-    window.addEventListener('blur', handleBlur)
+    const handleFocusEvent = (): void => {
+      void handleFocus().catch(error => {
+        logError(error as Error, 'UserProvider.handleFocus')
+      })
+    }
+
+    const handleBlurEvent = (): void => {
+      void handleBlur().catch(error => {
+        logError(error as Error, 'UserProvider.handleBlur')
+      })
+    }
+
+    window.addEventListener('focus', handleFocusEvent)
+    window.addEventListener('blur', handleBlurEvent)
 
     // Set initial status
-    if (user?.id && document.hasFocus()) {
-      void handleFocus()
-    }
+    void (async () => {
+      if (user?.id && document.hasFocus()) {
+        try {
+          await handleFocus()
+        } catch (error) {
+          logError(error as Error, 'UserProvider.initialFocus')
+        }
+      }
+    })()
 
     logMethodExit('UserProvider.focusEffect')
     return (): void => {
-      window.removeEventListener('focus', handleFocus)
-      window.removeEventListener('blur', handleBlur)
+      window.removeEventListener('focus', handleFocusEvent)
+      window.removeEventListener('blur', handleBlurEvent)
       clearTimeout(focusTimeoutId)
       clearTimeout(blurTimeoutId)
     }
@@ -167,7 +193,7 @@ export function UserProvider({ children }: UserProviderProps): React.ReactElemen
       }
       setUser(null)
       localStorage.clear()
-      navigate('/', { replace: true })
+      await navigate('/', { replace: true })
       logInfo('User logged out successfully')
     } catch (error) {
       logError(error as Error, 'UserProvider.logout')

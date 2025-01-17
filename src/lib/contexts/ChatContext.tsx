@@ -169,28 +169,44 @@ export function ChatProvider({ children }: ChatProviderProps): React.ReactElemen
   const joinChannel = useCallback(async (channelId: string): Promise<void> => {
     logMethodEntry('ChatProvider.joinChannel', { channelId })
     if (!user?.id) {
-      const error = new Error('Cannot join channel: No user logged in')
+      const error = new Error('Cannot join channel: no active user')
       logError(error, 'ChatProvider.joinChannel')
       throw error
     }
 
     try {
-      const { error } = await supabase
+      // Check if user is already a member
+      const { data: existingMember, error: checkError } = await supabase
         .from('channel_members')
-        .insert([
-          toDbFields({
-            channelId,
-            userId: user.id
-          })
-        ])
+        .select('*')
+        .eq('channel_id', channelId)
+        .eq('user_id', user.id)
+        .single()
 
-      if (error) throw error
-      logInfo('Channel joined successfully', { channelId })
+      if (checkError && checkError.code !== 'PGRST116') {
+        throw checkError
+      }
+
+      // If not already a member, add them
+      if (!existingMember) {
+        const { error: joinError } = await supabase
+          .from('channel_members')
+          .insert([{
+            channel_id: channelId,
+            user_id: user.id
+          }])
+
+        if (joinError) {
+          throw joinError
+        }
+      }
+
+      logMethodExit('ChatProvider.joinChannel')
     } catch (error) {
       logError(error as Error, 'ChatProvider.joinChannel')
       throw error
     }
-  }, [user?.id])
+  }, [user])
 
   const leaveChannel = useCallback(async (channelId: string): Promise<void> => {
     logMethodEntry('ChatProvider.leaveChannel', { channelId })
