@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { supabase } from '@/lib/supabase'
 import { UserList } from '@/components/UserList'
+import { AIAssistant } from '@/components/AIAssistant'
 
 interface TextRange {
   start: number
@@ -512,31 +513,35 @@ export function ChatPage(): JSX.Element {
             data-cy="sidebar-resize-handle"
           />
           
-          <div className="p-4 min-w-[150px]">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-gray-900">AI Assistant</h2>
-              <button 
-                onClick={() => setRightSidebarOpen(false)}
-                className="text-gray-500 hover:text-gray-700 p-1 rounded-md hover:bg-gray-100 transition-colors"
-                aria-label="Close AI Assistant"
-                data-cy="close-ai-assistant"
-              >
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  width="20" 
-                  height="20" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  strokeWidth="2" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
+          <div className="flex flex-col h-full">
+            <div className="p-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="font-semibold text-gray-900">AI Assistant</h2>
+                <button 
+                  onClick={() => setRightSidebarOpen(false)}
+                  className="text-gray-500 hover:text-gray-700 p-1 rounded-md hover:bg-gray-100 transition-colors"
+                  aria-label="Close AI Assistant"
+                  data-cy="close-ai-assistant"
                 >
-                  <path d="m9 18 6-6-6-6"/>
-                </svg>
-              </button>
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    width="20" 
+                    height="20" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                  >
+                    <path d="m9 18 6-6-6-6"/>
+                  </svg>
+                </button>
+              </div>
             </div>
-            <p className="text-gray-500 text-sm">Ask me anything about the conversation!</p>
+            <div className="flex-1 overflow-hidden">
+              <AIAssistant />
+            </div>
           </div>
         </div>
       )}
