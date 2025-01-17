@@ -9,10 +9,12 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test-supabase": "tsx scripts/test-supabase.ts",
-    "cypress:open": "cypress open",
-    "cypress:run": "cypress run",
-    "test:e2e": "cypress run",
-    "test:component": "cypress run --component"
+    "cypress:open": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && cypress open\"",
+    "cypress:run": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && cypress run\"",
+    "test:e2e": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && cypress run\"",
+    "test:component": "cypress run --component",
+    "pretest": "npm run build",
+    "test": "npm run test:component && npm run test:e2e"
   },
   "dependencies": {
     "@aws-amplify/ui-react": "^6.5.5",
@@ -35,6 +37,7 @@
     "@vitejs/plugin-react": "^4.3.4",
     "aws-cdk": "^2.138.0",
     "aws-cdk-lib": "^2.138.0",
+    "concurrently": "^9.1.2",
     "constructs": "^10.3.0",
     "dotenv": "^16.4.7",
     "esbuild": "^0.24.2",
@@ -47,6 +50,7 @@
     "eslint-plugin-security": "^3.0.1",
     "tsx": "^4.19.2",
     "typescript": "^5.4.5",
-    "vite": "^6.0.7"
+    "vite": "^6.0.7",
+    "wait-on": "^8.0.2"
   }
 }

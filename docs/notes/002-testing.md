@@ -39,11 +39,18 @@ Adding comprehensive end-to-end testing using Cypress to ensure reliable user in
 
 #### Available Commands
 ```bash
-npm run cypress:open    # Open Cypress UI
-npm run cypress:run     # Run all tests headlessly
-npm run test:e2e       # Run E2E tests
+npm run cypress:open    # Open Cypress UI (starts dev server automatically)
+npm run cypress:run     # Run all tests headlessly (starts dev server automatically)
+npm run test:e2e       # Run E2E tests (starts dev server automatically)
 npm run test:component  # Run component tests
+npm run test           # Run all tests (component + E2E)
 ```
+
+#### Test Environment
+- Dev server automatically starts before E2E tests
+- Server health check ensures tests start only when server is ready
+- Component tests run independently without server
+- Pre-test build ensures latest code is compiled
 
 ### Current Status
 1. ✅ Basic Cypress setup completed
