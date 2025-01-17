@@ -16,7 +16,7 @@ interface TextRange {
   url?: string
 }
 
-export function ChatPage(): React.ReactElement {
+export function ChatPage(): JSX.Element {
   logMethodEntry('ChatPage')
   const { user, isAuthenticated, logout } = useUser()
   const { activeChannel, channels, createChannel, setActiveChannel, joinChannel } = useChat()
@@ -27,6 +27,8 @@ export function ChatPage(): React.ReactElement {
   const [isInputFocused, setIsInputFocused] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const formatBarRef = useRef<HTMLDivElement>(null)
+  const [sidebarWidth, setSidebarWidth] = useState(384) // 384px = 24rem = 1.5 * w-64
+  const [isResizing, setIsResizing] = useState(false)
 
   const handleFormat = (format: 'bold' | 'italic' | 'strike' | 'link'): void => {
     const textarea = textareaRef.current
@@ -269,6 +271,42 @@ export function ChatPage(): React.ReactElement {
     logMethodExit('ChatPage.selectFirstChannelEffect')
   }, [activeChannel, channels, setActiveChannel])
 
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent): void => {
+      if (!isResizing) return
+      
+      // Prevent text selection during resize
+      e.preventDefault()
+      
+      // Calculate width from the right edge of the window to the mouse position
+      const newWidth = Math.max(150, Math.min(800, window.innerWidth - e.clientX))
+      setSidebarWidth(newWidth)
+    }
+
+    const handleMouseUp = (): void => {
+      setIsResizing(false)
+      // Re-enable text selection
+      document.body.style.userSelect = 'text'
+      document.body.style.cursor = 'default'
+    }
+
+    if (isResizing) {
+      // Disable text selection while resizing
+      document.body.style.userSelect = 'none'
+      document.body.style.cursor = 'ew-resize'
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+      // Reset styles when unmounting
+      document.body.style.userSelect = 'text'
+      document.body.style.cursor = 'default'
+    }
+  }, [isResizing])
+
   const result = (
     <div className="flex h-screen">
       {/* Left Sidebar */}
@@ -431,21 +469,74 @@ export function ChatPage(): React.ReactElement {
         </div>
       </div>
 
+      {!rightSidebarOpen && (
+        <button
+          onClick={() => setRightSidebarOpen(true)}
+          className="fixed right-0 top-1/2 -translate-y-1/2 bg-purple-100 hover:bg-purple-200 p-2 rounded-l-lg shadow-md transition-all duration-200 ease-in-out"
+          aria-label="Open AI Assistant"
+          data-cy="open-ai-assistant"
+        >
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            width="20" 
+            height="20" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            className="text-purple-600"
+          >
+            <path d="m15 18-6-6 6-6"/>
+          </svg>
+        </button>
+      )}
+
       {/* Right Sidebar */}
       {rightSidebarOpen && (
-        <div className="w-64 bg-gray-50 border-l border-gray-200">
-          <div className="p-4">
+        <div 
+          className="bg-gray-50 border-l border-gray-200 relative flex flex-col"
+          style={{ width: `${sidebarWidth}px` }}
+        >
+          {/* Resize Handle */}
+          <div
+            className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-purple-200 transition-colors"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              setIsResizing(true)
+            }}
+            style={{ 
+              backgroundColor: isResizing ? 'rgb(233 213 255)' : 'transparent',
+            }}
+            data-cy="sidebar-resize-handle"
+          />
+          
+          <div className="p-4 min-w-[150px]">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-gray-900">Thread</h2>
-              <Button 
-                variant="ghost" 
-                size="sm"
+              <h2 className="font-semibold text-gray-900">AI Assistant</h2>
+              <button 
                 onClick={() => setRightSidebarOpen(false)}
+                className="text-gray-500 hover:text-gray-700 p-1 rounded-md hover:bg-gray-100 transition-colors"
+                aria-label="Close AI Assistant"
+                data-cy="close-ai-assistant"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-              </Button>
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  width="20" 
+                  height="20" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                >
+                  <path d="m9 18 6-6-6-6"/>
+                </svg>
+              </button>
             </div>
-            <p className="text-gray-500 text-sm">No thread selected</p>
+            <p className="text-gray-500 text-sm">Ask me anything about the conversation!</p>
           </div>
         </div>
       )}
