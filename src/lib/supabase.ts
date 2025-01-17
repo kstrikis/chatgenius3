@@ -76,9 +76,37 @@ export async function findOrCreateUser(name: string): Promise<DbUser> {
       throw createError
     }
 
+    // Ensure general channel exists
+    const generalChannelId = 'c0d46316-9e1d-4e8b-a7e7-b0a46c17c58c'
+    const { data: generalChannel, error: channelError } = await supabase
+      .from('channels')
+      .select('*')
+      .eq('id', generalChannelId)
+      .single()
+
+    if (channelError && channelError.code !== 'PGRST116') {
+      throw channelError
+    }
+
+    // Create general channel if it doesn't exist
+    if (!generalChannel) {
+      const { error: createChannelError } = await supabase
+        .from('channels')
+        .insert([{
+          id: generalChannelId,
+          name: 'general',
+          description: 'Team-wide discussions and updates',
+          type: 'public'
+        }])
+
+      if (createChannelError) {
+        throw createChannelError
+      }
+    }
+
     // Join the general channel
     const channelMemberData = {
-      channelId: 'c0d46316-9e1d-4e8b-a7e7-b0a46c17c58c',
+      channelId: generalChannelId,
       userId: newUser.id
     }
 
