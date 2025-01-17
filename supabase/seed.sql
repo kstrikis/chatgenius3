@@ -4,10 +4,10 @@ TRUNCATE users, channels, channel_members, messages CASCADE;
 -- Create users
 WITH inserted_users AS (
   INSERT INTO users (id, name, is_guest, status) VALUES
-    ('11111111-1111-1111-1111-111111111111', 'Sarah Chen', false, 'online'),
-    ('22222222-2222-2222-2222-222222222222', 'Marcus Rodriguez', false, 'online'),
-    ('33333333-3333-3333-3333-333333333333', 'Priya Patel', false, 'away'),
-    ('44444444-4444-4444-4444-444444444444', 'Alex Kim', false, 'online')
+    ('11111111-1111-1111-1111-111111111111'::uuid, 'Sarah Chen', false, 'online'),
+    ('22222222-2222-2222-2222-222222222222'::uuid, 'Marcus Rodriguez', false, 'online'),
+    ('33333333-3333-3333-3333-333333333333'::uuid, 'Priya Patel', false, 'away'),
+    ('44444444-4444-4444-4444-444444444444'::uuid, 'Alex Kim', false, 'online')
   RETURNING *
 )
 SELECT * FROM inserted_users;
@@ -15,14 +15,14 @@ SELECT * FROM inserted_users;
 -- Create general channel
 WITH inserted_channel AS (
   INSERT INTO channels (id, name, description, type) VALUES
-    ('c0d46316-9e1d-4e8b-a7e7-b0a46c17c58c', 'general', 'Team-wide discussions and updates', 'public')
+    ('c0d46316-9e1d-4e8b-a7e7-b0a46c17c58c'::uuid, 'general', 'Team-wide discussions and updates', 'public')
   RETURNING *
 )
 SELECT * FROM inserted_channel;
 
 -- Add users to general channel
 INSERT INTO channel_members (channel_id, user_id)
-SELECT 'c0d46316-9e1d-4e8b-a7e7-b0a46c17c58c', id
+SELECT 'c0d46316-9e1d-4e8b-a7e7-b0a46c17c58c'::uuid, id
 FROM users;
 
 -- Insert messages with realistic timestamps
@@ -40,12 +40,12 @@ numbered_dates AS (
 )
 INSERT INTO messages (channel_id, user_id, content, created_at)
 SELECT 
-  'c0d46316-9e1d-4e8b-a7e7-b0a46c17c58c' as channel_id,
+  'c0d46316-9e1d-4e8b-a7e7-b0a46c17c58c'::uuid as channel_id,
   CASE 
-    WHEN rnum % 4 = 1 THEN '11111111-1111-1111-1111-111111111111'  -- Sarah
-    WHEN rnum % 4 = 2 THEN '22222222-2222-2222-2222-222222222222'  -- Marcus
-    WHEN rnum % 4 = 3 THEN '33333333-3333-3333-3333-333333333333'  -- Priya
-    ELSE '44444444-4444-4444-4444-444444444444'                     -- Alex
+    WHEN rnum % 4 = 1 THEN '11111111-1111-1111-1111-111111111111'::uuid  -- Sarah
+    WHEN rnum % 4 = 2 THEN '22222222-2222-2222-2222-222222222222'::uuid  -- Marcus
+    WHEN rnum % 4 = 3 THEN '33333333-3333-3333-3333-333333333333'::uuid  -- Priya
+    ELSE '44444444-4444-4444-4444-444444444444'::uuid                     -- Alex
   END as user_id,
   CASE 
     -- Project Kickoff (Day 1)
