@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { useToast } from '@/hooks/use-toast'
+import { useUser } from '@/lib/contexts/UserContext'
+import { useNavigate } from 'react-router-dom'
 
 interface GuestFormData {
   name: string
@@ -14,34 +16,27 @@ export function LandingPage(): React.ReactElement {
   logMethodEntry('LandingPage')
   const [formData, setFormData] = useState<GuestFormData>({ name: '' })
   const { toast } = useToast()
+  const { login } = useUser()
+  const navigate = useNavigate()
 
-  const handleGuestSubmit = async (e: React.FormEvent): Promise<void> => {
-    logMethodEntry('LandingPage.handleGuestSubmit')
-    e.preventDefault()
-    
+  const handleGuestSubmit = async (formData: GuestFormData): Promise<void> => {
+    logMethodEntry('LandingPage.handleGuestSubmit', { formData })
     try {
-      // TODO: Implement guest login logic
-      logInfo('Guest login attempt', { name: formData.name || 'anonymous' })
-      
-      // Temporary logging until we implement the actual login
-      logInfo('Guest login successful', { name: formData.name || 'anonymous' })
+      await login(formData.name || undefined)
+      await navigate('/chat')
       toast({
-        title: 'Success',
-        description: 'Logged in successfully',
+        title: 'Welcome!',
+        description: 'You have successfully joined the chat.'
       })
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to login')
-      logError(error, 'LandingPage.handleGuestSubmit')
+    } catch (error) {
+      logError(error as Error, 'LandingPage.handleGuestSubmit')
       toast({
-        variant: 'destructive',
         title: 'Error',
-        description: error.message,
+        description: 'Failed to join chat. Please try again.',
+        variant: 'destructive'
       })
-      logMethodExit('LandingPage.handleGuestSubmit', { error: error.message })
-      return
     }
-
-    logMethodExit('LandingPage.handleGuestSubmit', { success: true })
+    logMethodExit('LandingPage.handleGuestSubmit')
   }
 
   const handleAuth0Login = async (): Promise<void> => {
@@ -82,7 +77,7 @@ export function LandingPage(): React.ReactElement {
             />
 
             <Button
-              onClick={handleGuestSubmit}
+              onClick={() => handleGuestSubmit(formData)}
               className="w-full"
               variant="default"
             >
