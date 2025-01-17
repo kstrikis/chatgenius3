@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
 import { logMethodEntry, logMethodExit, logInfo, logError } from '@/lib/logger'
 import { findOrCreateUser, updateUserStatus, generateAnonymousName } from '@/lib/supabase'
+import { useNavigate } from 'react-router-dom'
 
 const USER_STORAGE_KEY = 'chatgenius_user'
 const PERSIST_DEBOUNCE_MS = 1000 // 1 second debounce for persistence
@@ -16,6 +17,7 @@ interface UserContextType {
   user: User | null
   setUser: (user: User | null) => void
   isAuthenticated: boolean
+  isLoading: boolean
   login: (name?: string) => Promise<void>
   logout: () => Promise<void>
 }
@@ -30,9 +32,29 @@ interface UserProviderProps {
 export function UserProvider({ children }: UserProviderProps): React.ReactElement {
   logMethodEntry('UserProvider')
   const [user, setUser] = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const navigate = useNavigate()
 
   // Keep track of the last persisted user state
   const lastPersistedRef = useRef<string | null>(null)
+
+  // Load persisted user on mount
+  useEffect(() => {
+    logMethodEntry('UserProvider.loadPersistedUserEffect')
+    const persistedUser = localStorage.getItem(USER_STORAGE_KEY)
+    if (persistedUser) {
+      try {
+        const parsedUser = JSON.parse(persistedUser) as User
+        setUser(parsedUser)
+        logInfo('Loaded persisted user', { user: parsedUser })
+      } catch (error) {
+        logError(error as Error, 'UserProvider.loadPersistedUserEffect')
+        localStorage.removeItem(USER_STORAGE_KEY)
+      }
+    }
+    setIsLoading(false)
+    logMethodExit('UserProvider.loadPersistedUserEffect')
+  }, [])
 
   // Debounced persistence function
   const debouncedPersist = useCallback((newUser: User | null): void => {
@@ -144,6 +166,8 @@ export function UserProvider({ children }: UserProviderProps): React.ReactElemen
         await updateUserStatus(user.id, 'offline')
       }
       setUser(null)
+      localStorage.clear()
+      navigate('/', { replace: true })
       logInfo('User logged out successfully')
     } catch (error) {
       logError(error as Error, 'UserProvider.logout')
@@ -156,6 +180,7 @@ export function UserProvider({ children }: UserProviderProps): React.ReactElemen
     user,
     setUser,
     isAuthenticated: !!user,
+    isLoading,
     login,
     logout
   }

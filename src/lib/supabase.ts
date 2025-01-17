@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { logError, logInfo, logMethodEntry, logMethodExit } from '@/lib/logger'
 import { toDbFields, fromDbFields } from '@/lib/utils/db'
+import { v4 as uuidv4 } from 'uuid'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -143,4 +144,24 @@ export function subscribeToUsers(callback: (payload: RealtimeChangePayload) => v
 
 export const unsubscribe = (subscription: { unsubscribe: () => void }): void => {
   void subscription.unsubscribe()
+}
+
+export async function createChannel(name: string, description: string): Promise<Channel> {
+  logMethodEntry('createChannel', { name, description })
+
+  const channelId = name === 'general' ? 'c0d46316-9e1d-4e8b-a7e7-b0a46c17c58c' : uuidv4()
+
+  const { data, error } = await supabase
+    .from('channels')
+    .insert([{ id: channelId, name, description }])
+    .select()
+    .single()
+
+  if (error) {
+    logError(error, 'createChannel')
+    throw error
+  }
+
+  logMethodExit('createChannel', { channel: data })
+  return mapDbRowToChannel(data)
 } 

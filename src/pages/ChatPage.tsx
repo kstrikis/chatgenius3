@@ -1,12 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { logMethodEntry, logMethodExit, logError } from '@/lib/logger'
 import { useUser } from '@/lib/contexts/UserContext'
 import { useChat } from '@/lib/contexts/ChatContext'
 import { useMessages } from '@/lib/contexts/MessageContext'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
+import { supabase } from '@/lib/supabase'
+import { createChannel } from '@/lib/createChannel'
 
 interface DirectMessage {
   id: string
@@ -24,8 +26,8 @@ interface TextRange {
 
 export function ChatPage(): React.ReactElement {
   logMethodEntry('ChatPage')
-  const { user, isAuthenticated, logout } = useUser()
-  const { activeChannel, channels, createChannel, setActiveChannel } = useChat()
+  const { user, isAuthenticated, isLoading, logout } = useUser()
+  const { activeChannel, channels, createChannel, setActiveChannel, joinChannel } = useChat()
   const { messages, sendMessage } = useMessages()
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false)
   const [messageText, setMessageText] = useState('')
@@ -33,6 +35,7 @@ export function ChatPage(): React.ReactElement {
   const [isInputFocused, setIsInputFocused] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const formatBarRef = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
 
   const handleFormat = (format: 'bold' | 'italic' | 'strike' | 'link'): void => {
     const textarea = textareaRef.current
@@ -162,15 +165,14 @@ export function ChatPage(): React.ReactElement {
     { id: '3', name: 'User Three', status: 'offline', unread: 0 }
   ]
 
-  // Redirect to landing page if not authenticated
-  if (!isAuthenticated) {
-    logMethodExit('ChatPage', { redirecting: true })
-    return <Navigate to="/" replace />
-  }
-
   const handleLogout = async (): Promise<void> => {
     logMethodEntry('ChatPage.handleLogout')
-    await logout()
+    try {
+      setActiveChannel(null)
+      await logout()
+    } catch (error) {
+      logError(error as Error, 'ChatPage.handleLogout')
+    }
     logMethodExit('ChatPage.handleLogout')
   }
 
@@ -236,17 +238,43 @@ export function ChatPage(): React.ReactElement {
   // Create a default channel if none exists
   useEffect(() => {
     logMethodEntry('ChatPage.createDefaultChannelEffect')
-    if (isAuthenticated && channels.length === 0) {
-      void createChannel('general', 'The default channel for general discussion')
-        .then(channel => {
-          setActiveChannel(channel)
-        })
-        .catch(error => {
-          logError(error as Error, 'ChatPage.createDefaultChannelEffect')
-        })
+    if (!isAuthenticated) {
+      logMethodExit('ChatPage.createDefaultChannelEffect', { reason: 'not authenticated' })
+      return
     }
+
+    // Always try to join the general channel first
+    void supabase
+      .from('channels')
+      .select('*')
+      .eq('id', 'c0d46316-9e1d-4e8b-a7e7-b0a46c17c58c')
+      .single()
+      .then(async ({ data: generalChannel, error }) => {
+        if (error) {
+          logError(error, 'ChatPage.createDefaultChannelEffect')
+          return
+        }
+
+        if (generalChannel) {
+          try {
+            await joinChannel(generalChannel.id)
+            setActiveChannel(generalChannel)
+          } catch (joinError) {
+            logError(joinError as Error, 'ChatPage.createDefaultChannelEffect')
+          }
+        } else {
+          // Only create a new general channel if it doesn't exist
+          try {
+            const channel = await createChannel('general', 'The default channel for general discussion')
+            setActiveChannel(channel)
+          } catch (createError) {
+            logError(createError as Error, 'ChatPage.createDefaultChannelEffect')
+          }
+        }
+      })
+
     logMethodExit('ChatPage.createDefaultChannelEffect')
-  }, [isAuthenticated, channels.length, createChannel, setActiveChannel])
+  }, [isAuthenticated, joinChannel, createChannel, setActiveChannel])
 
   // Select first channel if none is active
   useEffect(() => {
@@ -264,7 +292,13 @@ export function ChatPage(): React.ReactElement {
         {/* Workspace Header */}
         <div className="p-4 flex items-center justify-between">
           <h1 className="text-lg font-semibold text-gray-900">ChatGenius</h1>
-          <Button variant="secondary" size="sm" onClick={handleLogout}>
+          <Button 
+            variant="destructive" 
+            size="sm" 
+            onClick={handleLogout} 
+            data-cy="logout-button"
+            aria-label="Logout"
+          >
             <span className="sr-only">Logout</span>
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
           </Button>
@@ -290,10 +324,15 @@ export function ChatPage(): React.ReactElement {
 
         {/* Channels */}
         <div className="px-2 flex-1 overflow-y-auto">
-          <div className="mb-4">
+          <div className="mb-4" data-cy="channel-list">
             <h2 className="px-2 mb-2 text-sm font-semibold text-gray-500">Channels</h2>
             {channels.map(channel => (
-              <Button key={channel.id} variant="secondary" className="w-full justify-between mb-1">
+              <Button 
+                key={channel.id} 
+                variant="secondary" 
+                className="w-full justify-between mb-1"
+                data-cy="channel-item"
+              >
                 <span className="flex items-center">
                   <span className="text-gray-500 mr-2">#</span>
                   {channel.name}

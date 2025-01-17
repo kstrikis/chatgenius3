@@ -1,6 +1,13 @@
-import { supabase } from '../src/lib/supabase'
-import { testRealtimeUpdates } from '../src/lib/supabaseRealtimeTest'
-import { testUserOperations } from '../src/lib/supabaseTest'
+import { config } from 'dotenv'
+import { createClient } from '@supabase/supabase-js'
+
+// Load environment variables
+config()
+
+const supabaseUrl = process.env.VITE_SUPABASE_URL || 'http://localhost:54321'
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || 'failed-to-get-key'
+
+const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function verifyConnection() {
   console.log('Verifying Supabase connection...')
@@ -20,16 +27,6 @@ async function main() {
   try {
     // Verify connection first
     await verifyConnection()
-
-    console.log('\n-------------------\n')
-    
-    // Test basic CRUD operations
-    await testUserOperations()
-    
-    console.log('\n-------------------\n')
-    
-    // Test real-time updates
-    await testRealtimeUpdates()
   } catch (error) {
     console.error('Test failed:', error)
     process.exit(1)

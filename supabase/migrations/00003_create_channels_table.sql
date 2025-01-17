@@ -4,7 +4,7 @@ drop table if exists public.channels cascade;
 -- Create the channels table
 create table public.channels (
   id uuid default gen_random_uuid() primary key,
-  name text not null,
+  name text not null unique,
   description text,
   type text not null check (type in ('public', 'private')),
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
