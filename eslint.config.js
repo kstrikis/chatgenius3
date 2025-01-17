@@ -1,6 +1,7 @@
 import { fileURLToPath } from 'url'
 import reactPlugin from 'eslint-plugin-react'
 import importPlugin from 'eslint-plugin-import'
+import cypressPlugin from 'eslint-plugin-cypress'
 import enforceLogging from './eslint-rules/enforce-logging.js'
 
 export default [
@@ -26,7 +27,7 @@ export default [
         ecmaFeatures: { jsx: true },
         projectService: true,
         tsconfigRootDir: fileURLToPath(new URL('.', import.meta.url)),
-        project: './tsconfig.json'
+        project: ['./tsconfig.json', './cypress/tsconfig.json']
       }
     },
     plugins: {
@@ -134,7 +135,13 @@ export default [
   },
   {
     files: ['cypress/**/*.{ts,tsx}', '**/*.cy.{ts,tsx}', 'cypress.config.ts'],
+    plugins: {
+      cypress: cypressPlugin
+    },
     languageOptions: {
+      parserOptions: {
+        project: ['./cypress/tsconfig.json']
+      },
       globals: {
         cy: true,
         Cypress: true,
@@ -155,7 +162,12 @@ export default [
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
-      '@typescript-eslint/no-unsafe-return': 'off'
+      '@typescript-eslint/no-unsafe-return': 'off',
+      'cypress/no-assigning-return-values': 'error',
+      'cypress/no-unnecessary-waiting': 'error',
+      'cypress/assertion-before-screenshot': 'warn',
+      'cypress/no-force': 'warn',
+      'cypress/no-async-tests': 'error'
     }
   }
 ] 

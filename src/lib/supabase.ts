@@ -120,4 +120,28 @@ export async function updateUserStatus(
     logError(error as Error, 'updateUserStatus')
     throw error
   }
+}
+
+export interface RealtimeChangePayload<T = any> {
+  new: T | null
+  old: T | null
+  errors: any[] | null
+  eventType: 'INSERT' | 'UPDATE' | 'DELETE'
+}
+
+export function subscribeToUsers(callback: (payload: RealtimeChangePayload) => void): { unsubscribe: () => void } {
+  const subscription = supabase
+    .channel('public:users')
+    .on('postgres_changes', { 
+      event: '*', 
+      schema: 'public',
+      table: 'users'
+    }, callback)
+    .subscribe()
+
+  return subscription
+}
+
+export const unsubscribe = (subscription: { unsubscribe: () => void }): void => {
+  void subscription.unsubscribe()
 } 

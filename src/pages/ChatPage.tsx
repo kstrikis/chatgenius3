@@ -6,8 +6,6 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
 
 interface Channel {
   id: string
@@ -155,7 +153,7 @@ export function ChatPage(): React.ReactElement {
     }
 
     document.addEventListener('mousedown', handleClickOutside)
-    return () => {
+    return (): void => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [])

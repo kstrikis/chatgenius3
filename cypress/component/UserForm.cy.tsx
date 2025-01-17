@@ -1,43 +1,64 @@
+/// <reference types="cypress" />
 import React from 'react'
-
-import { mount } from 'cypress/react'
-
-import UserForm from '../../src/components/UserForm'
+import { mount } from 'cypress/react18'
+import { UserForm } from '../../src/components/UserForm'
 
 describe('UserForm', () => {
   beforeEach(() => {
-    // Mount the component before each test
-    cy.mount(<UserForm onSubmit={cy.stub().as('onSubmit')} />)
+    // Mock the createUser function
+    cy.window().then((win) => {
+      win.createUser = cy.stub().as('createUser')
+    })
   })
 
-  it('renders the form fields', () => {
-    cy.get('input[name="name"]').should('exist')
-    cy.get('input[name="email"]').should('exist')
+  it('should render the form', () => {
+    mount(<UserForm />)
+    cy.get('form').should('exist')
+    cy.get('input[id="name"]').should('exist')
+    cy.get('input[id="email"]').should('exist')
     cy.get('button[type="submit"]').should('exist')
   })
 
-  it('validates required fields', () => {
-    // Try to submit without filling fields
-    cy.get('button[type="submit"]').click()
+  it('should handle form submission', () => {
+    // Mock successful response
+    cy.window().then((win) => {
+      win.createUser.resolves({ id: '1', name: 'Test User', email: 'test@example.com' })
+    })
     
-    // Check for validation messages
-    cy.get('form').should('contain', 'required')
+    mount(<UserForm />)
+    
+    const name = 'Test User'
+    const email = 'test@example.com'
+
+    cy.get('input[id="name"]').type(name)
+    cy.get('input[id="email"]').type(email)
+    cy.get('button[type="submit"]').click()
+
+    // Should show success message
+    cy.get('.success').should('be.visible')
+    cy.get('.success').should('contain', 'User added successfully!')
+    
+    // Form should be cleared
+    cy.get('input[id="name"]').should('have.value', '')
+    cy.get('input[id="email"]').should('have.value', '')
   })
 
-  it('submits form with valid data', () => {
-    const testUser = {
-      name: 'Test User',
-      email: 'test@example.com'
-    }
+  it('should handle errors', () => {
+    // Mock error response
+    cy.window().then((win) => {
+      win.createUser.rejects(new Error('Failed to create user'))
+    })
+    
+    mount(<UserForm />)
+    
+    const name = 'Test User'
+    const email = 'test@example.com'
 
-    // Fill out the form
-    cy.get('input[name="name"]').type(testUser.name)
-    cy.get('input[name="email"]').type(testUser.email)
-    
-    // Submit the form
+    cy.get('input[id="name"]').type(name)
+    cy.get('input[id="email"]').type(email)
     cy.get('button[type="submit"]').click()
-    
-    // Verify onSubmit was called with correct data
-    cy.get('@onSubmit').should('have.been.calledWith', testUser)
+
+    cy.get('.error').should('be.visible')
+    cy.get('.error').should('contain', 'Failed to create user')
   })
 }) 

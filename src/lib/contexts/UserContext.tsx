@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
 import { logMethodEntry, logMethodExit, logInfo, logError } from '@/lib/logger'
-import { findOrCreateUser, updateUserStatus, generateAnonymousName, type DbUser } from '@/lib/supabase'
+import { findOrCreateUser, updateUserStatus, generateAnonymousName } from '@/lib/supabase'
 
 const USER_STORAGE_KEY = 'chatgenius_user'
 const PERSIST_DEBOUNCE_MS = 1000 // 1 second debounce for persistence
@@ -21,6 +21,7 @@ interface UserContextType {
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
+export { UserContext }
 
 interface UserProviderProps {
   children: ReactNode

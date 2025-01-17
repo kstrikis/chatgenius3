@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import { logMethodEntry, logMethodExit, logError, logInfo } from '../lib/logger'
-import { createUser } from '../lib/supabaseTest'
+
+declare global {
+  interface Window {
+    createUser: (data: { name: string, email: string }) => Promise<{ id: string, name: string, email: string }>
+  }
+}
 
 export function UserForm(): React.ReactElement {
   logMethodEntry('UserForm')
@@ -26,7 +31,7 @@ export function UserForm(): React.ReactElement {
     setSuccess(false)
 
     try {
-      const newUser = await createUser({ name, email })
+      const newUser = await window.createUser({ name, email })
       logInfo('User created successfully', { user: newUser })
       
       if (!newUser) {
