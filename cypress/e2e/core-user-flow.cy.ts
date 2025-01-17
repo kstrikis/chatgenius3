@@ -95,4 +95,27 @@ describe('Core User Flow', () => {
     cy.get('input[placeholder*="guest name"]', { timeout: 10000 }).should('be.visible')
     cy.get('button').contains(/join as guest/i).should('be.visible')
   })
+
+  it('should show logged-in user in the user list', () => {
+    // Visit and login
+    cy.visit('/')
+    cy.get('input[placeholder*="guest name"]', { timeout: 10000 }).should('be.visible').type(TEST_USER)
+    cy.get('button').contains(/join as guest/i).click()
+
+    // Wait for the chat interface to load
+    cy.contains(TEST_USER, { timeout: 10000 }).should('be.visible')
+
+    // Verify user list contains the logged-in user
+    cy.get('[data-cy="user-list"]').within(() => {
+      cy.get('[data-cy="user-item"]')
+        .should('have.length.at.least', 1)
+        .and('contain', TEST_USER)
+      
+      // Verify user status is shown
+      cy.get('[data-cy="user-item"]')
+        .filter(`:contains("${TEST_USER}")`)
+        .find('[data-cy="user-status"]')
+        .should('exist')
+    })
+  })
 }) 

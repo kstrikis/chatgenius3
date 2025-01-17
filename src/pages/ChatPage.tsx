@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { supabase } from '@/lib/supabase'
 import { createChannel } from '@/lib/createChannel'
+import { UserList } from '@/components/UserList'
 
 interface DirectMessage {
   id: string
@@ -157,13 +158,6 @@ export function ChatPage(): React.ReactElement {
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [])
-
-  // Mock data - will be replaced with real data
-  const directMessages: DirectMessage[] = [
-    { id: '1', name: 'User One', status: 'online', unread: 0 },
-    { id: '2', name: 'User Two', status: 'away', unread: 1 },
-    { id: '3', name: 'User Three', status: 'offline', unread: 0 }
-  ]
 
   const handleLogout = async (): Promise<void> => {
     logMethodEntry('ChatPage.handleLogout')
@@ -332,6 +326,7 @@ export function ChatPage(): React.ReactElement {
                 variant="secondary" 
                 className="w-full justify-between mb-1"
                 data-cy="channel-item"
+                onClick={() => setActiveChannel(channel)}
               >
                 <span className="flex items-center">
                   <span className="text-gray-500 mr-2">#</span>
@@ -346,31 +341,8 @@ export function ChatPage(): React.ReactElement {
             ))}
           </div>
 
-          {/* Direct Messages */}
-          <div>
-            <h2 className="px-2 mb-2 text-sm font-semibold text-gray-500">Direct Messages</h2>
-            {directMessages.map(dm => (
-              <Button key={dm.id} variant="secondary" className="w-full justify-between mb-1">
-                <span className="flex items-center">
-                  <span className="relative mr-2">
-                    <Avatar className="h-6 w-6">
-                      <AvatarFallback>{dm.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <span className={`absolute bottom-0 right-0 w-2 h-2 rounded-full ${
-                      dm.status === 'online' ? 'bg-green-500' :
-                      dm.status === 'away' ? 'bg-yellow-500' : 'bg-gray-400'
-                    }`} />
-                  </span>
-                  {dm.name}
-                </span>
-                {dm.unread > 0 && (
-                  <span className="bg-blue-600 text-white text-xs px-2 rounded-full">
-                    {dm.unread}
-                  </span>
-                )}
-              </Button>
-            ))}
-          </div>
+          {/* Channel Users */}
+          <UserList />
         </div>
 
         {/* User Status */}
