@@ -1,7 +1,11 @@
 import React, { useEffect } from 'react'
-import { logMethodEntry, logMethodExit, logInfo } from './lib/logger'
-import { UsersPage } from './pages/UsersPage'
-import './styles/users.css'
+import { logMethodEntry, logMethodExit, logInfo } from '@/lib/logger'
+import { LandingPage } from '@/pages/LandingPage'
+import { ChatPage } from '@/pages/ChatPage'
+import { Toaster } from '@/components/ui/toaster'
+import { UserProvider } from '@/lib/contexts/UserContext'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import '@/styles/users.css'
 
 function App(): React.ReactElement {
   logMethodEntry('App')
@@ -14,9 +18,17 @@ function App(): React.ReactElement {
   }, [])
 
   const result = (
-    <div className="app" style={{ minHeight: '100vh', background: '#f0f2f5' }}>
-      <UsersPage />
-    </div>
+    <BrowserRouter>
+      <UserProvider>
+        <div className="app" style={{ minHeight: '100vh', background: '#f0f2f5' }}>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/chat" element={<ChatPage />} />
+          </Routes>
+          <Toaster />
+        </div>
+      </UserProvider>
+    </BrowserRouter>
   )
 
   logMethodExit('App')

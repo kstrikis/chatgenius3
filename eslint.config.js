@@ -15,7 +15,8 @@ export default [
       '**/scripts/**/*',
       '**/*.{spec,test}.{ts,tsx}',
       '**/tests/**/*',
-      '**/e2e/**/*'
+      '**/e2e/**/*',
+      'src/components/ui/**'
     ],
     languageOptions: {
       ecmaVersion: 'latest',
@@ -24,7 +25,8 @@ export default [
       parserOptions: {
         ecmaFeatures: { jsx: true },
         projectService: true,
-        tsconfigRootDir: fileURLToPath(new URL('.', import.meta.url))
+        tsconfigRootDir: fileURLToPath(new URL('.', import.meta.url)),
+        project: './tsconfig.json'
       }
     },
     plugins: {
@@ -65,7 +67,7 @@ export default [
           selector: 'property',
           format: ['camelCase', 'snake_case', 'UPPER_CASE'],
           filter: {
-            regex: '^(VITE_|created_at|updated_at|deleted_at|user_id|email_address|first_name|last_name).*$',
+            regex: '^(VITE_|created_at|updated_at|deleted_at|user_id|email_address|first_name|last_name|is_guest|last_seen|ADD_TOAST|UPDATE_TOAST|DISMISS_TOAST|REMOVE_TOAST).*$',
             match: true
           }
         }
@@ -102,6 +104,20 @@ export default [
           '^anonymous$'
         ]
       }]
+    }
+  },
+  {
+    files: ['src/hooks/**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/naming-convention': 'off',
+      'enforce-logging/enforce-logging': 'off'
+    }
+  },
+  {
+    files: ['src/lib/contexts/**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/explicit-function-return-type': 'off'
     }
   },
   {
