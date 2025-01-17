@@ -68,7 +68,7 @@ export default [
           selector: 'property',
           format: ['camelCase', 'snake_case', 'UPPER_CASE'],
           filter: {
-            regex: '^(VITE_|created_at|updated_at|deleted_at|user_id|email_address|first_name|last_name|is_guest|last_seen|ADD_TOAST|UPDATE_TOAST|DISMISS_TOAST|REMOVE_TOAST).*$',
+            regex: '^(VITE_|[a-z]+_[a-z_]+|ADD_TOAST|UPDATE_TOAST|DISMISS_TOAST|REMOVE_TOAST).*$',
             match: true
           }
         }

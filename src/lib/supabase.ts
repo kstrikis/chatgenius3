@@ -164,4 +164,26 @@ export async function createChannel(name: string, description: string): Promise<
 
   logMethodExit('createChannel', { channel: data })
   return mapDbRowToChannel(data)
+}
+
+export interface Channel {
+  id: string
+  name: string
+  description: string
+  type: string
+  unreadCount: number
+  createdAt: Date
+  updatedAt: Date
+}
+
+function mapDbRowToChannel(row: Record<string, unknown>): Channel {
+  return {
+    id: row.id as string,
+    name: row.name as string,
+    description: row.description as string,
+    type: row.type as string,
+    unreadCount: (row.unread_count as number) || 0,
+    createdAt: new Date(row.created_at as string),
+    updatedAt: new Date(row.updated_at as string)
+  }
 } 

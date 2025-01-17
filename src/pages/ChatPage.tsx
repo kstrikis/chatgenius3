@@ -1,22 +1,13 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { logMethodEntry, logMethodExit, logError } from '@/lib/logger'
 import { useUser } from '@/lib/contexts/UserContext'
 import { useChat } from '@/lib/contexts/ChatContext'
 import { useMessages } from '@/lib/contexts/MessageContext'
-import { Navigate, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { supabase } from '@/lib/supabase'
-import { createChannel } from '@/lib/createChannel'
 import { UserList } from '@/components/UserList'
-
-interface DirectMessage {
-  id: string
-  name: string
-  status: 'online' | 'away' | 'offline'
-  unread: number
-}
 
 interface TextRange {
   start: number
@@ -27,7 +18,7 @@ interface TextRange {
 
 export function ChatPage(): React.ReactElement {
   logMethodEntry('ChatPage')
-  const { user, isAuthenticated, isLoading, logout } = useUser()
+  const { user, isAuthenticated, logout } = useUser()
   const { activeChannel, channels, createChannel, setActiveChannel, joinChannel } = useChat()
   const { messages, sendMessage } = useMessages()
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false)
@@ -36,7 +27,6 @@ export function ChatPage(): React.ReactElement {
   const [isInputFocused, setIsInputFocused] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const formatBarRef = useRef<HTMLDivElement>(null)
-  const navigate = useNavigate()
 
   const handleFormat = (format: 'bold' | 'italic' | 'strike' | 'link'): void => {
     const textarea = textareaRef.current

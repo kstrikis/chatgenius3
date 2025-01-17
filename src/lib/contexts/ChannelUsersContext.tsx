@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react'
+import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
 import { logMethodEntry, logMethodExit, logInfo, logError } from '@/lib/logger'
 import { useUser } from './UserContext'
 import { useChat } from './ChatContext'
@@ -48,8 +48,7 @@ export function ChannelUsersProvider({ children }: ChannelUsersProviderProps): R
         const { data: channelUsers, error: usersError } = await supabase
           .from('channel_members')
           .select(`
-            user_id,
-            users:user_id (
+            users (
               id,
               name,
               is_guest,
@@ -61,7 +60,9 @@ export function ChannelUsersProvider({ children }: ChannelUsersProviderProps): R
 
         if (usersError) throw usersError
 
-        const formattedUsers = channelUsers.map(member => fromDbFields<ChannelUser>(member.users))
+        const formattedUsers = channelUsers
+          .filter(member => member.users)
+          .map(member => fromDbFields<ChannelUser>(member.users as unknown as Record<string, unknown>))
         setUsers(formattedUsers)
         setError(null)
         logInfo('Channel users loaded successfully', { count: formattedUsers.length })
