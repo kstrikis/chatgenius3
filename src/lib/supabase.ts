@@ -3,8 +3,8 @@ import { logError, logInfo, logMethodEntry, logMethodExit } from '@/lib/logger'
 import { toDbFields, fromDbFields } from '@/lib/utils/db'
 import { v4 as uuidv4 } from 'uuid'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
   throw new Error('Missing Supabase environment variables')
