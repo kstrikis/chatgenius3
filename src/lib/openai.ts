@@ -1,33 +1,47 @@
-import OpenAI from 'openai'
 import { logMethodEntry, logMethodExit, logError } from '@/lib/logger'
-
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true // We'll add a proxy later for production
-})
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system'
   content: string
 }
 
-export async function sendChatMessage(messages: ChatMessage[]): Promise<string> {
-  logMethodEntry('sendChatMessage', { messageCount: messages.length })
+logMethodEntry('openai.ts', {
+  DEV: import.meta.env.DEV,
+  VITE_LAMBDA_ENDPOINT: import.meta.env.VITE_LAMBDA_ENDPOINT,
+  MODE: import.meta.env.MODE
+});
+
+const API_URL = import.meta.env.DEV
+  ? import.meta.env.VITE_DEV_LAMBDA_ENDPOINT + '/chat'
+  : import.meta.env.VITE_LAMBDA_ENDPOINT + '/chat';
+
+export async function sendChatMessage(messages: ChatMessage[], targetUserId: string): Promise<string> {
+  logMethodEntry('sendChatMessage', { messageCount: messages.length, targetUserId, apiUrl: API_URL })
   
   try {
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages,
-      temperature: 0.7,
-      max_tokens: 500
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        query: messages[messages.length - 1].content,
+        targetUserId
+      })
     })
 
-    const response = completion.choices[0]?.message?.content || 'Sorry, I could not generate a response.'
-    logMethodExit('sendChatMessage', { responseLength: response.length })
-    return response
+    if (!response.ok) {
+      throw new Error(`API responded with status: ${response.status}`)
+    }
+    
+    const data = await response.json()
+    const aiResponse = data.response || 'Sorry, I could not generate a response.'
+    
+    logMethodExit('sendChatMessage', { responseLength: aiResponse.length })
+    return aiResponse
   } catch (error) {
     logError(error instanceof Error ? error : new Error('Unknown error in sendChatMessage'), 'sendChatMessage')
-    throw new Error('Failed to get response from AI')
+    throw new Error('Failed to get response from API')
   }
 } 

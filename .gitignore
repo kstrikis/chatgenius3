@@ -28,7 +28,11 @@ dist-ssr
 amplify_outputs*
 amplifyconfiguration*
 
+# aws sam
+.aws-sam
+
 .env
 .env*
 */.env
 */.env*
+env.json

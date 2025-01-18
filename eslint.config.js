@@ -6,6 +6,92 @@ import enforceLogging from './eslint-rules/enforce-logging.js'
 
 export default [
   {
+    files: ['amplify/**/*.{ts,tsx,js,jsx}'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      parser: (await import('@typescript-eslint/parser')).default,
+      parserOptions: {
+        ecmaFeatures: { jsx: true }
+      }
+    },
+    plugins: {
+      '@typescript-eslint': (await import('@typescript-eslint/eslint-plugin')).default,
+    },
+    rules: {
+      'no-console': 'off',
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/no-floating-promises': 'off',
+      '@typescript-eslint/naming-convention': [
+        'error',
+        {
+          selector: 'default',
+          format: null
+        },
+        {
+          selector: 'variable',
+          format: null
+        },
+        {
+          selector: 'property',
+          format: null
+        }
+      ],
+      'enforce-logging/enforce-logging': 'off'
+    }
+  },
+  {
+    files: ['cypress/**/*.{ts,tsx}', '**/*.cy.{ts,tsx}', 'cypress.config.ts'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      parser: (await import('@typescript-eslint/parser')).default,
+      parserOptions: {
+        project: ['./cypress/tsconfig.json'],
+        ecmaFeatures: { jsx: true }
+      },
+      globals: {
+        describe: 'readonly',
+        it: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        before: 'readonly',
+        after: 'readonly',
+        cy: 'readonly',
+        Cypress: 'readonly',
+        context: 'readonly',
+        specify: 'readonly',
+        assert: 'readonly'
+      }
+    },
+    plugins: {
+      '@typescript-eslint': (await import('@typescript-eslint/eslint-plugin')).default,
+      cypress: cypressPlugin
+    },
+    settings: {
+      'import/resolver': {
+        typescript: {
+          project: './cypress/tsconfig.json'
+        }
+      }
+    },
+    rules: {
+      'enforce-logging/enforce-logging': 'off',
+      'no-console': 'off',
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      'cypress/no-assigning-return-values': 'error',
+      'cypress/no-unnecessary-waiting': 'error',
+      'cypress/assertion-before-screenshot': 'warn',
+      'cypress/no-force': 'warn',
+      'cypress/no-async-tests': 'error'
+    }
+  },
+  {
     files: ['**/*.{ts,tsx}'],
     ignores: [
       'dist/**/*',
@@ -17,7 +103,11 @@ export default [
       '**/*.{spec,test}.{ts,tsx}',
       '**/tests/**/*',
       '**/e2e/**/*',
-      'src/components/ui/**'
+      'cypress/**/*',
+      '**/*.cy.{ts,tsx}',
+      'cypress.config.ts',
+      'src/components/ui/**',
+      'amplify/**/*'
     ],
     languageOptions: {
       ecmaVersion: 'latest',
@@ -27,7 +117,7 @@ export default [
         ecmaFeatures: { jsx: true },
         projectService: true,
         tsconfigRootDir: fileURLToPath(new URL('.', import.meta.url)),
-        project: ['./tsconfig.json', './cypress/tsconfig.json']
+        project: ['./tsconfig.json']
       }
     },
     plugins: {
@@ -122,7 +212,7 @@ export default [
     }
   },
   {
-    files: ['**/*.{spec,test}.{ts,tsx}', '**/cypress/**/*.{ts,tsx}', '**/test-*.ts', '**/scripts/**/*.ts'],
+    files: ['**/*.{spec,test}.{ts,tsx}', '**/test-*.ts', '**/scripts/**/*.ts'],
     rules: {
       'enforce-logging/enforce-logging': 'off',
       'no-console': 'off',
@@ -131,43 +221,6 @@ export default [
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
       '@typescript-eslint/no-unsafe-return': 'off'
-    }
-  },
-  {
-    files: ['cypress/**/*.{ts,tsx}', '**/*.cy.{ts,tsx}', 'cypress.config.ts'],
-    plugins: {
-      cypress: cypressPlugin
-    },
-    languageOptions: {
-      parserOptions: {
-        project: ['./cypress/tsconfig.json']
-      },
-      globals: {
-        cy: true,
-        Cypress: true,
-        before: true,
-        after: true,
-        beforeEach: true,
-        afterEach: true,
-        describe: true,
-        it: true,
-        assert: true,
-        expect: true
-      }
-    },
-    rules: {
-      'enforce-logging/enforce-logging': 'off',
-      'no-console': 'off',
-      '@typescript-eslint/explicit-function-return-type': 'off',
-      '@typescript-eslint/no-unsafe-assignment': 'off',
-      '@typescript-eslint/no-unsafe-member-access': 'off',
-      '@typescript-eslint/no-unsafe-call': 'off',
-      '@typescript-eslint/no-unsafe-return': 'off',
-      'cypress/no-assigning-return-values': 'error',
-      'cypress/no-unnecessary-waiting': 'error',
-      'cypress/assertion-before-screenshot': 'warn',
-      'cypress/no-force': 'warn',
-      'cypress/no-async-tests': 'error'
     }
   }
 ] 
