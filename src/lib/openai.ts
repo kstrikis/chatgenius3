@@ -7,13 +7,17 @@ export interface ChatMessage {
 
 logMethodEntry('openai.ts', {
   DEV: import.meta.env.DEV,
-  VITE_LAMBDA_ENDPOINT: import.meta.env.VITE_LAMBDA_ENDPOINT,
+  VITE_DEV_LAMBDA_ENDPOINT: import.meta.env.VITE_DEV_LAMBDA_ENDPOINT,
   MODE: import.meta.env.MODE
 });
 
-const API_URL = import.meta.env.DEV
-  ? import.meta.env.VITE_DEV_LAMBDA_ENDPOINT + '/chat'
-  : import.meta.env.VITE_LAMBDA_ENDPOINT + '/chat';
+// Default to production URL
+let API_URL = 'https://w8ovth6l1m.execute-api.us-east-1.amazonaws.com/prod/chat';
+
+// Override with development URL if in dev mode
+if (import.meta.env.DEV && import.meta.env.VITE_DEV_LAMBDA_ENDPOINT) {
+  API_URL = import.meta.env.VITE_DEV_LAMBDA_ENDPOINT + '/chat';
+}
 
 export async function sendChatMessage(messages: ChatMessage[], targetUserId: string): Promise<string> {
   logMethodEntry('sendChatMessage', { messageCount: messages.length, targetUserId, apiUrl: API_URL })
